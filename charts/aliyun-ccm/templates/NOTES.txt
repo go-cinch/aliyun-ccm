@@ -1,0 +1,3 @@
+  You can get daemonset by 'kubectl get ds -n {{ include "aliyun-ccm.namespace" . }} {{ include "aliyun-ccm.dsName" . }}'
+  You can get configmap by 'kubectl get cm -n {{ include "aliyun-ccm.namespace" . }} {{ include "aliyun-ccm.secretName" . }}'
+  You can get service account by 'kubectl get sa -n {{ include "aliyun-ccm.namespace" . }} {{ include "aliyun-ccm.serviceAccountName" . }}'

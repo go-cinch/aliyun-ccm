@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app: {{ include "aliyun-ccm.name" . }}
+    tier: control-plane
+  name: {{ include "aliyun-ccm.dsName" . }}
+  namespace: {{ include "aliyun-ccm.namespace" . }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "aliyun-ccm.name" . }}
+      tier: control-plane
+  template:
+    metadata:
+      labels:
+        app: {{ include "aliyun-ccm.name" . }}
+        tier: control-plane
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ''
+    spec:
+      serviceAccountName: {{ include "aliyun-ccm.serviceAccountName" . }}
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+      {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.nodeSelector }}
+      nodeSelector:
+      {{- toYaml . | nindent 8 }}
+    {{- end }}
+      containers:
+      - command:
+        -  /cloud-controller-manager
+        - --leader-elect=true
+        - --cloud-provider=alicloud
+        - --use-service-account-credentials=true
+        - --cloud-config=/etc/kubernetes/config/cloud-config.conf
+        - --configure-cloud-routes=true
+        - --route-reconciliation-period=3m
+        - --leader-elect-resource-lock=leases
+        - --cluster-cidr={{ .Values.podCidr }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        livenessProbe:
+          failureThreshold: 8
+          httpGet:
+            host: 127.0.0.1
+            path: /healthz
+            port: 10258
+            scheme: HTTP
+          initialDelaySeconds: 15
+          timeoutSeconds: 15
+        name: {{ include "aliyun-ccm.name" . }}
+        resources:
+          requests:
+            cpu: 200m
+        volumeMounts:
+        - mountPath: /etc/kubernetes/
+          name: k8s
+        - mountPath: /etc/ssl/certs
+          name: certs
+        - mountPath: /etc/pki
+          name: pki
+        - mountPath: /etc/kubernetes/config
+          name: cloud-config
+      hostNetwork: true
+      volumes:
+      - hostPath:
+          path: /etc/kubernetes
+        name: k8s
+      - hostPath:
+          path: /etc/ssl/certs
+        name: certs
+      - hostPath:
+          path: /etc/pki
+        name: pki
+      - configMap:
+          defaultMode: 420
+          items:
+          - key: cloud-config.conf
+            path: cloud-config.conf
+          name: {{ include "aliyun-ccm.secretName" . }}
+        name: cloud-config

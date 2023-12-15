@@ -1,0 +1,38 @@
+# Default values for aliyun-ccm.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+namespaceOverride: ""
+nameOverride: ""
+fullnameOverride: ""
+
+podCidr: "10.244.0.0/16"
+
+serviceAccount:
+  # If not set, a name is generated using the name template
+  name: ""
+
+permission:
+  configmapName: ""
+  # aliyun ak(base64)
+  accessKeyID: "MTIzNDU2"
+  accessKeySecret: "NjU0MzIx"
+
+image:
+  repository: "registry.cn-hangzhou.aliyuncs.com/acs/cloud-controller-manager-amd64"
+  tag: "v2.8.1"
+  
+imagePullSecrets: []
+  
+tolerations:
+- key: node.cloudprovider.kubernetes.io/uninitialized
+  operator: Exists
+  effect: NoSchedule
+# tolerate run on control-plane
+- key: node-role.kubernetes.io/control-plane
+  operator: Exists
+  effect: NoSchedule
+
+nodeSelector:
+  # default run on control-plane
+  node-role.kubernetes.io/control-plane: ""
